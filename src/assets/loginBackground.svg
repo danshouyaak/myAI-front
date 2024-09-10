@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 1400 800">
+
+    <!-- 渐变背景 -->
+    <defs>
+        <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1a2a6c"/>
+            <stop offset="100%" stop-color="#b21f1f"/>
+        </linearGradient>
+    </defs>
+    <rect width="1400" height="800" fill="url(#bgGradient)"/>
+
+    <!-- 神经网络节点 -->
+    <g fill="#ffffff" stroke="#ffffff" stroke-width="1">
+        <circle cx="700" cy="400" r="10">
+            <animate attributeName="r" values="10;15;10" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="500" cy="300" r="8"/>
+        <circle cx="900" cy="300" r="8"/>
+        <circle cx="500" cy="500" r="8"/>
+        <circle cx="900" cy="500" r="8"/>
+        <circle cx="400" cy="200" r="6"/>
+        <circle cx="1000" cy="200" r="6"/>
+        <circle cx="400" cy="600" r="6"/>
+        <circle cx="1000" cy="600" r="6"/>
+    </g>
+
+    <!-- 神经网络连接线 -->
+    <line x1="700" y1="400" x2="500" y2="300" stroke="#ffffff" stroke-width="1" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </line>
+    <line x1="700" y1="400" x2="900" y2="300" stroke="#ffffff" stroke-width="1" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </line>
+    <line x1="700" y1="400" x2="500" y2="500" stroke="#ffffff" stroke-width="1" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </line>
+    <line x1="700" y1="400" x2="900" y2="500" stroke="#ffffff" stroke-width="1" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </line>
+
+    <!-- 旋转的代码块 -->
+    <rect x="300" y="200" rx="10" ry="10" width="100" height="150" fill="#2c3e50" stroke="#ecf0f1">
+        <animateTransform attributeName="transform" type="rotate" from="0 350 275" to="360 350 275" dur="10s"
+                          repeatCount="indefinite"/>
+    </rect>
+
+    <!-- 右侧神经网络节点 -->
+    <g fill="#ffffff" stroke="#ffffff" stroke-width="1">
+        <circle cx="1100" cy="300" r="10">
+            <animate attributeName="r" values="10;15;10" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="1200" cy="200" r="8"/>
+        <circle cx="1200" cy="400" r="8"/>
+        <circle cx="1300" cy="300" r="6"/>
+    </g>
+
+    <!-- 右侧神经网络连接线 -->
+    <line x1="1100" y1="300" x2="1200" y2="200" stroke="#ffffff" stroke-width="1" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </line>
+    <line x1="1100" y1="300" x2="1200" y2="400" stroke="#ffffff" stroke-width="1" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </line>
+    <line x1="1100" y1="300" x2="1300" y2="300" stroke="#ffffff" stroke-width="1" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </line>
+
+    <!-- 登录图标 -->
+    <circle cx="700" cy="200" r="50" fill="#2980b9" stroke="#ecf0f1">
+        <animate attributeName="r" values="50;55;50" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <text x="690" y="210" font-family="Arial" font-size="30" fill="#ffffff">🔑</text>
+
+    <!-- AI 应用标题 -->
+    <text x="700" y="450" font-family="Arial" font-size="36" text-anchor="middle" fill="#ffffff">AI 应用登录</text>
+
+</svg>
