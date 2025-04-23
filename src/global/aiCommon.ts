@@ -9,7 +9,7 @@ export interface aiModel {
 // 全局 aiModel 对象
 let aiModel: aiModel = {
   id: 1,
-  name: 'AI. 张医生',
+  name: 'AI医生',
   avatar: 'src/assets/doctor.png',
   description: '当医生已经30年了'
 };
