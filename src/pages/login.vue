@@ -31,6 +31,7 @@ const rules = reactive<FormRules<FormData>>({
 const handleLogin = async () => {
   // 这里可以添加登录逻辑，比如调用接口验证用户名和密码
   await requests.post('/user/login', formData).then((res) => {
+    console.log('====', res);
     setUser(res);
     router.push('/');
   }).catch((err) => {

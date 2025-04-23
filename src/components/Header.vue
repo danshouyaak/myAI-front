@@ -25,29 +25,22 @@
         style="width: 100%"
       />
     </el-menu-item>
-    <!--    <el-menu-item index="2">-->
-    <!--      <el-text type="primary" style="font-weight: bold">-->
-    <!--        AI数学家-->
-    <!--      </el-text>-->
-    <!--      <img-->
-    <!--        style="width: 100%"-->
-    <!--        src="@/assets/Mathematician.png"-->
-    <!--        alt="Element logo"-->
-    <!--      />-->
-    <!--    </el-menu-item>-->
   </el-menu>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 import { aiModels } from '@/models/AIModel.d.ts';
 import { aiModel, setAIModel } from '@/global/aiCommon.ts';
+import requests from '@/utils/request.ts';
 
 const activeIndex = ref('1');
 const handleSelect = (model: aiModel) => {
   console.log('handleSelect', model);
   setAIModel(model);
 };
+
+
 </script>
 
 <style scoped>
