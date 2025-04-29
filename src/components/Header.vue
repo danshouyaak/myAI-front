@@ -20,7 +20,7 @@
         {{ item.name }}
       </el-text>
       <img
-        :src="item.avatar"
+        :src="getAssetsFile(item.avatar)"
         alt="Element logo"
         style="width: 100%"
       />
@@ -33,7 +33,7 @@ import { ref, watchEffect } from 'vue';
 import { aiModels } from '@/models/AIModel.d.ts';
 import { aiModel, setAIModel } from '@/global/aiCommon.ts';
 import requests from '@/utils/request.ts';
-
+import { getAssetsFile } from '@/utils/pub-use.ts';
 const activeIndex = ref('1');
 const handleSelect = (model: aiModel) => {
   console.log('handleSelect', model);

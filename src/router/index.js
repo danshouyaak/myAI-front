@@ -6,13 +6,18 @@ const routes = [
   {
     path: '/',
     component: layout,
-    redirect: '/main',
+    redirect: '/NewMessage',
     meta: { requiresAuth: true }, // 表示该路由需要认证
     children: [
       {
         name: 'main',
-        path: '/main',
+        path: '/main/:conversationId',
         component: () => import('@/pages/MainPage.vue')
+      },
+      {
+        name: 'NewMessage',
+        path: '/NewMessage',
+        component: () => import('@/pages/NewMessage.vue')
       }
     ]
   },

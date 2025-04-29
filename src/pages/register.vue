@@ -1,25 +1,29 @@
 <script lang="ts" setup>
 import { reactive, ref } from 'vue';
-import { FormRules } from 'element-plus';
+import { ElMessage, FormRules } from 'element-plus';
+import requests from '@/utils/request.ts';
+import { setUser } from '@/global/UserStatue.ts';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 interface FormData {
-  username: string;
-  password: string;
+  userAccount: string;
+  userPassword: string;
   checkPassword: string;
 }
 
 const formData = reactive<FormData>({
-  username: '',
-  password: '',
+  userAccount: '',
+  userPassword: '',
   checkPassword: ''
 });
 
 const rules = reactive<FormRules<FormData>>({
-  username: [
+  userAccount: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
   ],
-  password: [
+  userPassword: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
   ],
@@ -29,6 +33,22 @@ const rules = reactive<FormRules<FormData>>({
   ]
 });
 
+
+const handleRegister = async () => {
+  // 这里可以添加登录逻辑，比如调用接口验证用户名和密码
+  await requests.post('/user/register', formData).then((res) => {
+    console.log('====', res);
+    if (res.code === 40000) {
+      ElMessage.error(res.message);
+      return;
+    }
+    router.push('/login');
+    ElMessage.success(res.message);
+  }).catch((err) => {
+    console.log(err);
+  });
+};
+
 </script>
 
 <template>
@@ -37,17 +57,18 @@ const rules = reactive<FormRules<FormData>>({
       <el-col :span="8">
         <el-card>
           <el-form :model="formData" :rules="rules" class="login-form" label-position="top" label-width="80px">
-            <el-form-item label="用户名" prop="username">
-              <el-input v-model="formData.username" placeholder="请输入用户名" />
+            <el-form-item label="用户名" prop="userAccount">
+              <el-input v-model="formData.userAccount" placeholder="请输入用户名" />
             </el-form-item>
-            <el-form-item label="密码" prop="password">
-              <el-input v-model="formData.password" placeholder="请输入密码" type="password" />
+            <el-form-item label="密码" prop="userPassword">
+              <el-input v-model="formData.userPassword" placeholder="请输入密码" type="password" />
             </el-form-item>
             <el-form-item label="再次确定密码" prop="checkPassword">
               <el-input v-model="formData.checkPassword" placeholder="再次确定密码" type="password" />
             </el-form-item>
             <el-form-item>
-              <el-button style="width: 100%; margin-bottom: 20px" type="primary">点击注册</el-button>
+              <el-button style="width: 100%; margin-bottom: 20px" type="primary" @click="handleRegister">点击注册
+              </el-button>
               <el-link href="/login" style="width: 100%; text-align: center" type="primary">返回登录</el-link>
             </el-form-item>
           </el-form>

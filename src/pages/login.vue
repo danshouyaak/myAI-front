@@ -4,7 +4,7 @@ import { FormRules } from 'element-plus';
 import requests from '@/utils/request.ts';
 import { useRouter } from 'vue-router';
 import { getUser, setUser } from '@/global/UserStatue.ts';
-
+import { ElMessage } from 'element-plus';
 const router = useRouter();
 
 interface FormData {
@@ -32,6 +32,11 @@ const handleLogin = async () => {
   // 这里可以添加登录逻辑，比如调用接口验证用户名和密码
   await requests.post('/user/login', formData).then((res) => {
     console.log('====', res);
+    if (res.code === 40000) {
+      ElMessage.error(res.message);
+      return;
+    }
+    ElMessage.success(res.message);
     setUser(res);
     router.push('/');
   }).catch((err) => {

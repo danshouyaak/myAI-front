@@ -6,7 +6,7 @@
           <Header />
         </el-header>
         <el-container>
-          <el-aside width="250px">
+          <el-aside class="aside" width="250px">
             <Aside />
           </el-aside>
           <el-container>
@@ -47,5 +47,12 @@ watchEffect(() => {
   height: 100vh;
   border: #e5e7eb 1px solid;
   box-shadow: 3px 3px 3px rgba(229, 231, 235, 1); /* 添加阴影 */
+}
+
+/* 定义手机尺寸的断点，这里以768px以下为手机大小 */
+@media (max-width: 768px) {
+  .aside {
+    display: none; /* 隐藏元素 */
+  }
 }
 </style>

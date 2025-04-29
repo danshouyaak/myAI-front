@@ -2,6 +2,8 @@
 import AiChatPage from './pages/AiChat/AiChatPage.vue';
 import HomePage from './layout/Home/HomePage.vue';
 import { RouterView } from 'vue-router';
+
+console.log('环境变量：', import.meta.env.MODE);
 </script>
 
 <template>

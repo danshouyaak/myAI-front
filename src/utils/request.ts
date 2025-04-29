@@ -12,9 +12,11 @@ const requests = axios.create({
   },
   // 配置axios对象
   //   基础路径
-  baseURL: 'http://localhost:8024',
+  // baseURL: 'http://localhost:8024',  http://47.119.128.91/
+
+  baseURL: import.meta.env.MODE === 'development' ? 'http://localhost:8024' : ' http://47.119.128.91:8024',
   //   请求超出的时间
-  timeout: 3000,
+  timeout: 5000,
 
   withCredentials: true // 允许携带cookie
 

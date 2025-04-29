@@ -4,8 +4,7 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import path from 'path'; // 导入path模块
-// 使用ES6模块语法来设置路径别名
-const pathResolve = (dir) => path.resolve(__dirname, dir);
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -33,5 +32,4 @@ export default defineConfig({
       }
     }
   }
-
 });

@@ -9,6 +9,10 @@
     }
   ],
   "compilerOptions": {
+    "skipLibCheck": true,
+    // 跳过声明文件的类型检查
+    "noEmitOnError": false,
+    // 允许在有错误的情况下生成 JavaScript
     "baseUrl": "./",
     "paths": {
       "@/*": [
