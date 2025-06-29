@@ -14,7 +14,9 @@ const requests = axios.create({
   //   基础路径
   // baseURL: 'http://localhost:8024',  http://47.119.128.91/
 
-  baseURL: import.meta.env.MODE === 'development' ? 'http://localhost:8024' : ' http://47.119.128.91:8024',
+  baseURL: import.meta.env.MODE === 'development' ? 'http://localhost:8024' : ' http://47.119.128.91:8024', // web端打包使用
+  // ' http://47.119.128.91:8024'
+  // baseURL: ' http://47.119.128.91:8024', // app打包使用
   //   请求超出的时间
   timeout: 5000,
 
@@ -52,5 +54,4 @@ requests.interceptors.response.use(
     return Promise.reject(err);
   }
 );
-
 export default requests;

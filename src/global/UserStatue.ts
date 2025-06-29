@@ -1,9 +1,9 @@
 export const setUser = (user: any) => {
-  sessionStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem('user', JSON.stringify(user));
 };
 
 export const getUser = () => {
-  const user = sessionStorage.getItem('user');
+  const user = localStorage.getItem('user');
   return user ? JSON.parse(user).data : null;
 };
 
