@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import layout from '@/layout/index.vue';
-
+import requests from '@/utils/request.ts';
 
 const routes = [
   {
@@ -24,19 +24,20 @@ const routes = [
   {
     name: 'login',
     path: '/login',
-    component: () => import('@/pages/login.vue')
+    component: () => import('@/pages/login.vue'),
+    meta: { guest: true } // 游客页面
   },
   {
     name: 'register',
     path: '/register',
-    component: () => import('@/pages/register.vue')
+    component: () => import('@/pages/register.vue'),
+    meta: { guest: true } // 游客页面
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/pages/404.vue')
   }
-
 ];
 
 const router = createRouter({
@@ -44,5 +45,34 @@ const router = createRouter({
   routes
 });
 
+// 获取用户登录状态
+const getUserLoginStatus = async () => {
+  try {
+    const res = await requests.get('/user/get/login');
+    return res.code !== 40100 && res.data !== null ? res.data : null;
+  } catch (error) {
+    console.error('获取登录状态失败:', error);
+    return null;
+  }
+};
+
+router.beforeEach(async (to, from, next) => {
+  // 获取用户登录状态
+  const user = await getUserLoginStatus();
+  console.log('to.meta', to.meta);
+  // 已登录用户不能访问登录和注册页面
+  if (user && to.meta.guest) {
+    next('/');
+    return;
+  }
+
+  // 需要认证的页面，但用户未登录
+  if (to.meta.requiresAuth && !user) {
+    next('/login');
+    return;
+  }
+
+  next();
+});
 
 export default router;
