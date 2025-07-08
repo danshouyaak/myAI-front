@@ -1,59 +1,78 @@
 <template>
   <div class="main-container">
-    <!--    <div class="message-container">我是聊天界面</div>-->
-    <el-scrollbar ref="messageContainer" class="message-container">
-      <el-main class="message-container">
-        <el-watermark :content="['blog', 'https://danshouyaak.github.io/']" font="16">
-          <div class="div1">
+    <epx-layout class="chat-layout">
+      <epx-header class="chat-header">
+        <epx-space>
+          <epx-avatar :size="40" :src="getAIModel().avatar" />
+          <epx-text size="large">{{ getAIModel().name }}</epx-text>
+        </epx-space>
+      </epx-header>
 
-            <!-- 先循环找到你想要聊天的那个人 -->
-            <div v-for="(list, index) in msgList" :key="index">
-              <!-- 有聊天记录：循环聊天记录 -->
-              <div>
-                <!-- 再循环显示聊天记录 -->
-                <p v-for="(msg, index) in list.list" :key="index" :class="{'right':msg.type=='my' }"
-                   style="  display: inline-table;">
-                  <el-text class="mx-1" size="small" tag="div">{{ msg.time }}</el-text>
-                  <el-avatar v-if="msg.type=='user'"
-                             shape="circle"
-                             :src="getAIModel().avatar"
-                             style="background-color: white;    display: block;"></el-avatar>
-                  <el-avatar v-if="msg.type=='my'" shape="circle"
-                             src="src/assets/userAvatar.png" style="float:right;display: block;"></el-avatar>
-                  <el-text class="mx-1"
-                           style="padding:0 10px; border-radius: 10px; display: inline-block;background-color: #D2F9D1;text-align: left"
-                           tag="span"
-                           v-html="marked.parse(msg.msg)"></el-text>
-                </p>
+      <epx-main class="chat-main">
+        <epx-scrollbar ref="messageContainer" class="message-container">
+          <epx-watermark
+            :content="['blog', 'https://danshouyaak.github.io/']"
+            :font="{fontSize: 16}"
+            class="watermark-container"
+          >
+            <div class="messages-wrapper">
+              <div v-for="(list, index) in msgList" :key="index">
+                <div class="message-list">
+                  <epx-chat
+                    v-for="(msg, msgIndex) in list.list"
+                    :key="msgIndex"
+                    :avatar="msg.type === 'user' ? getAIModel().avatar : 'src/assets/userAvatar.png'"
+                    :content="marked.parse(msg.msg)"
+                    :position="msg.type === 'my' ? 'right' : 'left'"
+                    :timestamp="msg.time"
+                  >
+                    <template #username>
+                      {{ msg.type === 'user' ? 'AI助手' : '我' }}
+                    </template>
+                  </epx-chat>
+                </div>
               </div>
             </div>
-          </div>
+          </epx-watermark>
+        </epx-scrollbar>
+      </epx-main>
 
-        </el-watermark>
+      <epx-footer class="chat-footer">
+        <epx-card class="input-card" shadow="never">
+          <epx-input
+            v-model="input"
+            :autosize="{ minRows: 1, maxRows: 4 }"
+            :rows="3"
+            clearable
+            placeholder="输入您的问题，按Enter发送"
+            type="textarea"
+            @keyup.enter.prevent="handleSSESubmit"
+          >
+            <template #prefix>
+              <epx-icon>
+                <Search />
+              </epx-icon>
+            </template>
+          </epx-input>
 
-      </el-main>
-    </el-scrollbar>
-    <div class="sendMeg-container">
-      <div class="sendMeg-container-content">
-        <el-input
-          v-model="input"
-          :prefix-icon="Search"
-          clearable
-          placeholder="Please input"
-          style="width: 80%"
-          @keyup.enter="handleSSESubmit"
-        />
-        <el-button :disabled=!input.trim() :loading=loading type="success" @click="handleSSESubmit">
-          <el-icon v-if="!loading">
-            <Position />
-          </el-icon>
-        </el-button>
-      </div>
-    </div>
-
+          <epx-space alignment="end" class="button-group">
+            <epx-button
+              :disabled="!input.trim()"
+              :icon="Position"
+              :loading="loading"
+              round
+              type="primary"
+              @click="handleSSESubmit"
+            >
+              发送
+            </epx-button>
+          </epx-space>
+        </epx-card>
+      </epx-footer>
+    </epx-layout>
   </div>
-
 </template>
+
 <script lang="ts" setup>
 import { nextTick, onMounted, ref } from 'vue';
 import { Position, Search } from '@element-plus/icons-vue';
@@ -63,24 +82,56 @@ import hljs from 'highlight.js';
 import 'highlight.js/styles/foundation.css';
 import 'highlight.js/styles/atom-one-dark.css';
 import { markedHighlight } from 'marked-highlight';
-import { aiModel, getAIModel } from '../../../global/aiCommon.ts';
+import { aiModel, getAIModel } from '../../../global/aiCommon';
 import { useRouter } from 'vue-router';
-import { getUser } from '@/global/UserStatue.ts';
-//复制组件引用
+import { getUser } from '../../../global/UserStatue';
+import {
+  EpxLayout,
+  EpxHeader,
+  EpxMain,
+  EpxFooter,
+  EpxCard,
+  EpxInput,
+  EpxButton,
+  EpxSpace,
+  EpxScrollbar,
+  EpxWatermark,
+  EpxChat,
+  EpxAvatar,
+  EpxText,
+  EpxIcon
+} from 'vue-element-plus-x';
 
+interface Message {
+  type: 'my' | 'user';
+  time: string;
+  msg: string;
+}
+
+interface ChatList {
+  username: string;
+  list: Message[];
+}
+
+interface MessageContainer {
+  wrapRef: HTMLElement;
+  scrollHeight: number;
+  scrollTo: (options: ScrollToOptions) => void;
+}
 
 const router = useRouter();
 
 const marked = new Marked(
   markedHighlight({
     langPrefix: 'hljs language-',
-    highlight(code, lang) {
+    highlight(code: string, lang: string) {
       const language = hljs.getLanguage(lang) ? lang : 'shell';
       return hljs.highlight(code, { language }).value;
     }
   })
 );
-const messageContainer = ref(null);
+
+const messageContainer = ref<MessageContainer | null>(null);
 const value = ref('### 自定义redis序列化器\n' +
   '\n' +
   '```java\n' +
@@ -101,15 +152,14 @@ const value = ref('### 自定义redis序列化器\n' +
   '    }\n' +
   '}\n' +
   '```');
-const articleDetails = ref();
-articleDetails.value = marked.parse(value.value);
-
+const articleDetails = ref<string>();
+articleDetails.value = marked.parse(value.value) as string;
 
 // 是否在回答中
 const isAnswering = ref(false);
 
 // 格式化时间
-function formatDate(date) {
+function formatDate(date: Date): string {
   const year = date.getFullYear();
   const month = date.getMonth() + 1; // 月份从0开始
   const day = date.getDate();
@@ -126,7 +176,6 @@ const loading = ref(false);
 onMounted(async () => {
   // await checkTest();
 });
-
 
 const handleSSESubmit = async () => {
   if (isAnswering.value) {
@@ -146,39 +195,52 @@ const handleSSESubmit = async () => {
 
   console.log('getUser()', getUser());
 
-
-  // console.log('触发sse');
   const aiModelInstance: aiModel = getAIModel();
   const eventSource = new EventSource(
-    // todo 手动填写完整的后端地址
     'http://localhost:8024/Hello/GetHello/sse' +
     `?content=${input.value}&modelId=${aiModelInstance.id}`
   );
   isAnswering.value = true;
-  const newProblem = {
+
+  const newProblem: Message = {
     type: 'my',
-    time: formatDate(new Date),
+    time: formatDate(new Date()),
     msg: input.value
   };
-  msgList.value[0].list.push(newProblem);
-  input.value = '';
-  loading.value = true;
-  const newAnswer = {
-    type: 'user',
-    time: formatDate(new Date),
-    msg: ''
-  };
-  msgList.value[0].list.push(newAnswer);
-  eventSource.onmessage = function(event) {
-    console.log('event:', JSON.parse(event.data));
-    console.log('eventData:', JSON.parse(event.data).choices[0].delta.content);
-    msgList.value[0].list[msgList.value[0].list.length - 1].msg = msgList.value[0].list[msgList.value[0].list.length - 1].msg + JSON.parse(event.data).choices[0].delta.content;
-    nextTick(() => {
-      let messageContainerVal = messageContainer.value;
-      messageContainerVal.wrapRef.scrollTop = messageContainerVal.wrapRef.scrollHeight;
-      messageContainerVal.scrollTo({ top: messageContainerVal.scrollHeight, behavior: 'smooth' });
-    });
-  };
+
+  const currentChat = msgList.value[0];
+  if (currentChat && Array.isArray(currentChat.list)) {
+    currentChat.list.push(newProblem);
+
+    input.value = '';
+    loading.value = true;
+
+    const newAnswer: Message = {
+      type: 'user',
+      time: formatDate(new Date()),
+      msg: ''
+    };
+    currentChat.list.push(newAnswer);
+
+    eventSource.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      console.log('event:', data);
+      console.log('eventData:', data.choices[0].delta.content);
+
+      const messageContainerVal = messageContainer.value;
+      if (messageContainerVal && currentChat.list.length > 0) {
+        const lastMessage = currentChat.list[currentChat.list.length - 1];
+        lastMessage.msg += data.choices[0].delta.content;
+
+        nextTick(() => {
+          messageContainerVal.scrollTo({
+            top: messageContainerVal.scrollHeight,
+            behavior: 'smooth'
+          });
+        });
+      }
+    };
+  }
 
   console.log('msgList', msgList);
   eventSource.onerror = function(event) {
@@ -192,8 +254,7 @@ const handleSSESubmit = async () => {
   };
 };
 
-
-const msgList = ref([
+const msgList = ref<ChatList[]>([
   {
     username: '王小虎',
     list: []
@@ -201,54 +262,113 @@ const msgList = ref([
 ]);
 const input = ref('');
 </script>
+
 <style scoped>
-
-
 .main-container {
-  display: flex;
-  flex-direction: column;
+  height: 100%;
+  background-color: var(--epx-bg-color);
+}
+
+.chat-layout {
   height: 100%;
 }
 
+.chat-header {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--epx-border-color);
+  background-color: var(--epx-bg-color);
+}
+
+.chat-main {
+  padding: 0;
+  height: calc(100vh - 180px);
+  overflow: hidden;
+}
+
 .message-container {
-  flex: 7;
+  height: 100%;
+  padding: 20px;
 }
 
-.sendMeg-container {
-  align-items: center;
+.watermark-container {
+  min-height: 100%;
+}
+
+.messages-wrapper {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.message-list {
   display: flex;
-  flex: 1;
-  border: #e5e7eb 1px solid;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.sendMeg-container-content {
-  width: 100%;
-  display: flex;
+:deep(.epx-chat) {
+  max-width: 80%;
 }
 
-
-.div1 {
-  width: 100%;
+:deep(.epx-chat-message) {
+  background-color: var(--epx-bg-color-overlay);
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.3s ease;
 }
 
-.div1 P {
-  width: 100%;
-  height: 50px;
+:deep(.epx-chat-message:hover) {
+  transform: translateY(-2px);
 }
 
-.content {
-  background-color: antiquewhite;
-  padding: 10px;
-  border-radius: 10px;
-  font-weight: 12;
+:deep(.markdown-content) {
+  line-height: 1.6;
 }
 
-.left {
-  display: inline-table;
-  text-align: left;
+:deep(.markdown-content pre) {
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: var(--epx-color-info-light-9);
+  overflow-x: auto;
+  font-family: Monaco, Consolas, Courier New, monospace;
 }
 
-.right {
-  text-align: right;
+.chat-footer {
+  border-top: 1px solid var(--epx-border-color);
+  padding: 16px;
+  background-color: var(--epx-bg-color);
+}
+
+.input-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: var(--epx-bg-color-overlay);
+  border: 1px solid var(--epx-border-color-light);
+}
+
+.button-group {
+  margin-top: 12px;
+}
+
+:deep(.epx-textarea__inner) {
+  min-height: 40px !important;
+  resize: none;
+  border-radius: 8px;
+}
+
+/* 暗色主题适配 */
+:deep(.dark) {
+  .epx-chat-message {
+    background-color: var(--epx-bg-color-overlay);
+  }
+
+  .input-card {
+    background-color: var(--epx-bg-color);
+  }
+
+  .markdown-content pre {
+    background-color: var(--epx-bg-color);
+  }
 }
 </style>

@@ -19,6 +19,11 @@ const routes = [
         name: 'NewMessage',
         path: '/NewMessage',
         component: () => import('@/pages/NewMessage.vue')
+      },
+      {
+        name: 'settings',
+        path: '/settings',
+        component: () => import('@/pages/settings.vue')
       }
     ]
   },

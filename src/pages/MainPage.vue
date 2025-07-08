@@ -1,100 +1,80 @@
 <template>
   <div class="main-container">
-    <!--    <div class="message-container">我是聊天界面</div>-->
-    <el-scrollbar ref="scrollbarRef" class="message-container">
-
-      <el-main ref="innerRef" class="message-container">
-        <div ref="messageContainer" class="div1">
-          <!-- 先循环找到你想要聊天的那个人 -->
-          <div v-for="(list, index) in msgList" :key="index">
-            <!-- 有聊天记录：循环聊天记录 -->
-            <div>
-              <!-- 再循环显示聊天记录 -->
-              <p v-for="(msg, index) in list.list" :key="index" :class="{'right':msg.messageType=='user' }"
-                 style="  display: inline-table;">
-                <el-text class="mx-1" size="small" tag="div">{{ msg.sendTime }}</el-text>
-                <el-avatar v-if="msg.messageType=='ai'"
-                           :src="getAssetsFile(msg.aiUrl)"
-                           shape="circle"
-                           style="background-color: white;    display: block;"></el-avatar>
-                <el-avatar v-if="msg.messageType=='user'" shape="circle"
-                           :src="getAssetsFile('userAvatar.png')" style="float:right;display: block;"></el-avatar>
-                <el-text class="mx-1"
-                         style="padding:0 10px; border-radius: 10px; display: inline-block;background-color: #D2F9D1;text-align: left"
-                         tag="span"
-                         v-html="marked.parse(msg.messageContent)"></el-text>
-              </p>
-            </div>
-          </div>
-        </div>
-      </el-main>
-    </el-scrollbar>
-    <div class="sendMeg-container">
-      <div class="sendMeg-container-content">
-        <el-input
-          v-model="input"
-          :prefix-icon="Search"
-          clearable
-          placeholder="Please input"
-          style="width: 80%"
-          @keyup.enter="startStream()"
-        />
-        <el-button :disabled=!input.trim() :loading=loading type="success" @click="startStream()">
-          <el-icon v-if="!loading">
-            <Position />
-          </el-icon>
-        </el-button>
-      </div>
+    <div class="message-container">
+      <BubbleList
+        :list="transformedList"
+        :max-height="'calc(85vh - 80px)'"
+        class="bubble-list"
+      />
     </div>
-
+    <div class="sendMeg-container">
+      <Sender
+        v-model="input"
+        :loading="loading"
+        placeholder="请输入消息..."
+        @click="startStream1()"
+      />
+    </div>
   </div>
-
 </template>
+
 <script lang="ts" setup>
-import { nextTick, onMounted, ref, watchEffect } from 'vue';
+import { nextTick, onMounted, ref, watchEffect, computed, onUnmounted } from 'vue';
 import { Position, Search } from '@element-plus/icons-vue';
-import { ElMessage, ScrollbarInstance } from 'element-plus';
-import { Marked } from 'marked';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/foundation.css';
-import 'highlight.js/styles/atom-one-dark.css';
-import { markedHighlight } from 'marked-highlight';
+import { ElMessage } from 'element-plus';
+import { useRoute } from 'vue-router';
 import { aiModel, getAIModel } from '@/global/aiCommon.ts';
 import { getUser } from '@/global/UserStatue.ts';
-import requests from '@/utils/request.ts';
 import {
   conversationId,
   getMsgList,
   isShowMessage,
   msgList,
   newConversationId,
-  newConversationMessage, setMessageList
+  newConversationMessage,
+  setMessageList
 } from '@/global/MessageCommon.ts';
-import NewMessage from '@/pages/NewMessage.vue';
 import { getAssetsFile } from '@/utils/pub-use.ts';
-import { fetchEventSource } from 'fetch-event-source';
-import { useRoute } from 'vue-router';
 import { aiModels } from '@/models/AIModel.d.ts';
 import request from '@/utils/request.ts';
+import { BubbleList, useSend, XRequest } from 'vue-element-plus-x';
+import type { BubbleListItemProps } from 'vue-element-plus-x';
+
+type MessageType = BubbleListItemProps & {
+  key: number;
+  role: 'user' | 'ai';
+};
 
 const route = useRoute();
-
-const scrollbarRef = ref<ScrollbarInstance>();
-const innerRef = ref<HTMLDivElement>();
-const marked = new Marked(
-  markedHighlight({
-    langPrefix: 'hljs language-',
-    highlight(code, lang) {
-      const language = hljs.getLanguage(lang) ? lang : 'shell';
-      return hljs.highlight(code, { language }).value;
-    }
-  })
-);
-
-const messageContainer = ref(null);
 const input = ref('');
 const loading = ref(false);
 const isAnswering = ref(false);
+const requestUrl = ref(import.meta.env.MODE === 'development' ? 'http://localhost:8024' : 'http://47.119.128.91:8024');
+
+const transformedList = computed(() => {
+  if (!msgList.value || !msgList.value[0] || !msgList.value[0].list) return [];
+  return msgList.value[0].list.map((msg, index) => {
+    const isLatestMessage = index === msgList.value[0].list.length - 1;
+    const isNewAIMessage = msg.messageType === 'ai' && isLatestMessage && loading.value;
+
+    return {
+      key: index,
+      role: msg.messageType as 'user' | 'ai',
+      placement: msg.messageType === 'ai' ? 'start' : 'end',
+      content: msg.messageContent,
+      loading: false,
+      shape: 'corner',
+      variant: msg.messageType === 'ai' ? 'filled' : 'outlined',
+      isMarkdown: true,
+      typing: isNewAIMessage, // 只在最新的 AI 消息且正在加载时启用打字机效果
+      isFog: msg.messageType === 'ai',
+      avatar: msg.messageType === 'ai' ? getAssetsFile(msg.aiUrl) : getAssetsFile('userAvatar.png'),
+      avatarSize: '24px',
+      avatarGap: '12px',
+      time: msg.sendTime
+    };
+  }) as MessageType[];
+});
 
 const formatDate = (date) => {
   const year = date.getFullYear();
@@ -106,13 +86,26 @@ const formatDate = (date) => {
   return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
 };
 
+let finish = () => {
+};
 
-const startStream = async () => {
+// 创建一个controller用于中止请求
+const abortController = ref(null);
+
+const abortRequest = () => {
+  if (abortController.value) {
+    abortController.value.abort();
+    abortController.value = null;
+  }
+};
+
+const startStream1 = async () => {
   if (isAnswering.value) {
     ElMessage.error('在回答中请稍等！！！');
     return;
   }
-  if (input.value.trim() === '') {
+
+  if (!input.value || input.value.trim() === '') {
     ElMessage.error('输入内容不能为空！！！');
     return;
   }
@@ -121,145 +114,165 @@ const startStream = async () => {
     ElMessage.error('请先登录！！！');
     return;
   }
-  if (newConversationId.value === '' || newConversationId.value === null) {
+
+  if (!newConversationId.value) {
     ElMessage.error('请先创建新的对话！！！');
     return;
   }
 
-  console.log('input', input.value);
-  console.log('conversationId', newConversationId.value);
-  console.log('aiModel', getAIModel().id);
-// return
-  const aiModelInstance = getAIModel();
-  const response = await fetch(`${requestUrl.value}/Hello/stream?content=${input.value}&modelId=${aiModelInstance.id}&conversationId=${newConversationId.value}`, {
-    credentials: 'include', // 如果需要发送 cookie
-    timeout: 3000 // 30秒超时
-  });
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
+  const aiModelInstance = await getAIModel();
+  if (!aiModelInstance) {
+    ElMessage.error('获取AI模型失败');
+    return;
   }
 
-  isAnswering.value = true;
-
-  const newProblem = {
-    messageType: 'user',
-    messageTime: formatDate(new Date()),
-    messageContent: input.value
-  };
-
-  msgList.value[0].list.push(newProblem);
-  input.value = '';
-  loading.value = true;
-
-  const newAnswer = {
-    messageType: 'ai',
-    messageTime: formatDate(new Date()),
-    messageContent: ''
-  };
-  msgList.value[0].list.push(newAnswer);
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder('utf-8');
-
+  let reader;
   try {
-    let done = false;
-    while (!done) {
-      const { done: chunkDone, value } = await reader.read();
-      done = chunkDone;
+    isAnswering.value = true;
+    loading.value = true;  // 开始加载
+    const currentInput = input.value;  // 保存当前输入
+    input.value = '';  // 立即清空输入框
 
+    const newProblem = {
+      messageType: 'user',
+      messageTime: formatDate(new Date()),
+      messageContent: currentInput  // 使用保存的输入
+    };
+
+    if (msgList.value.length === 0) {
+      msgList.value.push({
+        list: []
+      });
+    }
+    msgList.value[0].list.push(newProblem);
+
+    const newAnswer = {
+      messageType: 'ai',
+      messageTime: formatDate(new Date()),
+      messageContent: ''
+    };
+    msgList.value[0].list.push(newAnswer);
+
+    const response = await fetch(`${requestUrl.value}/Hello/stream?content=${currentInput}&modelId=${aiModelInstance.id}&conversationId=${newConversationId.value}`, {
+      credentials: 'include',
+      timeout: 3000
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+
+    while (true) {
+      const { value, done } = await reader.read();
       if (done) {
-        isAnswering.value = false;
-        loading.value = false;
         console.log('Stream completed');
+        loading.value = false;  // 在流完成时关闭 loading
         break;
       }
-      const chunk = decoder.decode(value, { stream: true });
-      msgList.value[0].list[msgList.value[0].list.length - 1].messageContent += chunk;
-      scrollbarRef.value!.setScrollTop(messageContainer.value.offsetHeight);
-    }
-    // 在流完成时，关闭流并更新状态
-    reader.releaseLock(); // 释放流的锁定
-    console.log('Stream closed');
 
+      const chunk = decoder.decode(value, { stream: true });
+      const lastMessage = msgList.value[0].list[msgList.value[0].list.length - 1];
+      if (lastMessage.messageType === 'ai') {
+        lastMessage.messageContent += chunk;
+      }
+
+      // 滚动到底部
+      await nextTick();
+      const container = document.querySelector('.message-list');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
   } catch (error) {
-    console.error('Error during stream processing:', error);
-    reader.releaseLock(); // 确保释放流的锁定
+    console.error('Stream error:', error);
+    ElMessage.error('请求失败，请稍后重试');
+    loading.value = false;  // 出错时关闭 loading
+  } finally {
+    if (reader) {
+      reader.releaseLock(); // 只在 reader 存在时释放锁定
+    }
     isAnswering.value = false;
-    loading.value = false;
   }
 };
-const requestUrl = ref('http://47.119.128.91:8024');
-// 调用流式处理函数
+
+const { send, loading: sendLoading, abort, finish: _finish } = useSend({
+  sendHandler: startStream1,
+  abortHandler: abortRequest  // 使用新的abort函数
+});
+
+// 给顶层变量赋值
+finish = _finish;
+
+// 在组件卸载时取消流
+onUnmounted(() => {
+  abortRequest();  // 使用新的abort函数
+});
+
+// 添加调试代码
 onMounted(() => {
   requestUrl.value = import.meta.env.MODE === 'development' ? 'http://localhost:8024' : 'http://47.119.128.91:8024';
+  console.log('API URL:', requestUrl.value);
+  console.log('当前cookie:', document.cookie);
+
+  // 测试请求
+  fetch(`${requestUrl.value}/user/get/login`, {
+    method: 'GET',
+    credentials: 'include',
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }).then(response => {
+    console.log('测试请求响应头:', response.headers);
+    console.log('测试请求状态:', response.status);
+    return response.json();
+  }).then(data => {
+    console.log('测试请求响应:', data);
+  }).catch(err => {
+    console.error('测试请求失败:', err);
+  });
+
   if (newConversationId.value && newConversationMessage.value) {
     input.value = newConversationMessage.value;
     conversationId.value = newConversationId.value;
     newConversationMessage.value = '';
     getMessageByConversationId(newConversationId.value);
   }
-  // getMessage();
 });
+
 const getMessageByConversationId = async (conversationId: string) => {
   newConversationId.value = conversationId;
   console.log('getMessageByConversationId', conversationId);
   const response = await request.get('/message/getMessage/list', { params: { conversationId } });
   setMessageList(response.data);
-  await startStream();
+  await startStream1();
 };
-
-
 </script>
+
 <style scoped>
-
-
 .main-container {
   display: flex;
   flex-direction: column;
   height: 85vh;
-  overflow-y: auto;
-
+  overflow: hidden;
 }
 
 .message-container {
-  flex: 7;
+  flex: 1;
+  overflow: hidden;
+}
+
+.bubble-list {
+  height: 100%;
+  padding: 20px;
 }
 
 .sendMeg-container {
-  align-items: center;
-  display: flex;
-  flex: 1;
-  border: #e5e7eb 1px solid;
-}
-
-.sendMeg-container-content {
-  width: 100%;
-  display: flex;
-}
-
-
-.div1 {
-  width: 100%;
-}
-
-.div1 P {
-  width: 100%;
-  height: 50px;
-}
-
-.content {
-  background-color: antiquewhite;
-  padding: 10px;
-  border-radius: 10px;
-  font-weight: 12;
-}
-
-.left {
-  display: inline-table;
-  text-align: left;
-}
-
-.right {
-  text-align: right;
+  padding: 20px;
+  border-top: #e5e7eb 1px solid;
+  background: white;
 }
 </style>

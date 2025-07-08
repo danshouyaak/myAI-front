@@ -1,6 +1,5 @@
 //对于axios进行二次封装
 import axios from 'axios';
-import router from '../router';
 //1.利用axios对象的方法create，去创建一个axios实例
 //2.request就是axios
 
