@@ -39,7 +39,7 @@
         <div class="user-info">
           <el-avatar
             :size="32"
-            src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+            :src="userAvatar || defaultAvatar"
           />
           <span v-if="!isCollapsed" class="username">{{ username }}</span>
         </div>
@@ -75,6 +75,7 @@ import { removeUser } from '@/global/UserStatue.ts';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import dayjs from 'dayjs';
+import defaultAvatar from '@/assets/userAvatar.png';
 
 interface Conversation {
   conversationId: string;
@@ -86,8 +87,8 @@ const router = useRouter();
 const isCollapsed = ref(false);
 const activeConversationId = ref('');
 const conversationList = ref<Conversation[]>([]);
-const defaultAvatar = 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png';
 const username = ref('用户');
+const userAvatar = ref('');
 
 // 计算会话列表的高度
 const conversationsHeight = computed(() => {
@@ -192,8 +193,22 @@ const handleLogout = async () => {
   }
 };
 
+// 获取用户信息
+const getUserInfo = async () => {
+  try {
+    const res = await requests.get('/user/get/login');
+    if (res.code === 0) {
+      username.value = res.data.userName || '用户';
+      userAvatar.value = res.data.userAvatar || '';
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+  }
+};
+
 onMounted(() => {
   getConversationList();
+  getUserInfo();  // 添加获取用户信息
 });
 </script>
 

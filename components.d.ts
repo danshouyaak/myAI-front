@@ -8,12 +8,12 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Aside: typeof import('./src/components/Aside.vue')['default']
-    ElAside: typeof import('element-plus/es')['ElAside']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElCol: typeof import('element-plus/es')['ElCol'];
     ElContainer: typeof import('element-plus/es')['ElContainer']
+    ElDialog: typeof import('element-plus/es')['ElDialog'];
     ElDropdown: typeof import('element-plus/es')['ElDropdown'];
     ElDropdownItem: typeof import('element-plus/es')['ElDropdownItem'];
     ElDropdownMenu: typeof import('element-plus/es')['ElDropdownMenu'];
@@ -28,16 +28,16 @@ declare module 'vue' {
     ElMenu: typeof import('element-plus/es')['ElMenu']
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
     ElRow: typeof import('element-plus/es')['ElRow'];
-    ElScrollbar: typeof import('element-plus/es')['ElScrollbar']
-    ElSlider: typeof import('element-plus/es')['ElSlider'];
-    ElSwitch: typeof import('element-plus/es')['ElSwitch'];
     ElTag: typeof import('element-plus/es')['ElTag']
     ElText: typeof import('element-plus/es')['ElText']
-    ElTooltip: typeof import('element-plus/es')['ElTooltip'];
     ElUpload: typeof import('element-plus/es')['ElUpload'];
     ElWatermark: typeof import('element-plus/es')['ElWatermark']
     Header: typeof import('./src/components/Header.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+  }
+
+  export interface ComponentCustomProperties {
+    vLoading: typeof import('element-plus/es')['ElLoadingDirective'];
   }
 }

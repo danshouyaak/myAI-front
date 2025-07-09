@@ -39,6 +39,7 @@ import { aiModels } from '@/models/AIModel.d.ts';
 import request from '@/utils/request.ts';
 import { BubbleList, useSend, XRequest } from 'vue-element-plus-x';
 import type { BubbleListItemProps } from 'vue-element-plus-x';
+import defaultAvatar from '@/assets/userAvatar.png';
 
 type MessageType = BubbleListItemProps & {
   key: number;
@@ -50,6 +51,20 @@ const input = ref('');
 const loading = ref(false);
 const isAnswering = ref(false);
 const requestUrl = ref(import.meta.env.MODE === 'development' ? 'http://localhost:8024' : 'http://47.119.128.91:8024');
+
+const userAvatar = ref('');
+
+// 获取用户信息
+const getUserInfo = async () => {
+  try {
+    const res = await request.get('/user/get/login');
+    if (res.code === 0) {
+      userAvatar.value = res.data.userAvatar || '';
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+  }
+};
 
 const transformedList = computed(() => {
   if (!msgList.value || !msgList.value[0] || !msgList.value[0].list) return [];
@@ -68,8 +83,8 @@ const transformedList = computed(() => {
       isMarkdown: true,
       typing: isNewAIMessage, // 只在最新的 AI 消息且正在加载时启用打字机效果
       isFog: msg.messageType === 'ai',
-      avatar: msg.messageType === 'ai' ? getAssetsFile(msg.aiUrl) : getAssetsFile('userAvatar.png'),
-      avatarSize: '24px',
+      avatar: msg.messageType === 'ai' ? getAssetsFile(msg.aiUrl) : (userAvatar.value || defaultAvatar),
+      avatarSize: msg.messageType === 'ai' ? '35px' : '40px',  // AI头像稍小一点，用户头像稍大一点
       avatarGap: '12px',
       time: msg.sendTime
     };
@@ -241,6 +256,7 @@ onMounted(() => {
     newConversationMessage.value = '';
     getMessageByConversationId(newConversationId.value);
   }
+  getUserInfo();  // 获取用户信息
 });
 
 const getMessageByConversationId = async (conversationId: string) => {

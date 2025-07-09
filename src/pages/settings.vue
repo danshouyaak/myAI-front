@@ -6,20 +6,22 @@
           <h2>个人信息</h2>
         </div>
       </template>
-      
+
       <div class="user-profile">
         <!-- 用户头像 -->
         <div class="avatar-section">
-          <el-avatar 
-            :size="100" 
+          <el-avatar
+            :size="100"
             :src="userInfo.userAvatar || defaultAvatar"
             @error="() => true"
+            style="cursor: pointer"
+            @click="handleAvatarClick"
           >
             {{ userInfo.userName?.charAt(0)?.toUpperCase() }}
           </el-avatar>
           <el-upload
             class="avatar-uploader"
-            action="/api/user/avatar"
+            :action="`${baseURL}/file/uploadPhoto`"
             :show-file-list="false"
             :on-success="handleAvatarSuccess"
             :before-upload="beforeAvatarUpload"
@@ -28,9 +30,25 @@
           </el-upload>
         </div>
 
+        <!-- 头像预览对话框 -->
+        <el-dialog
+          v-model="dialogVisible"
+          :close-on-click-modal="true"
+          :show-close="true"
+          title="头像预览"
+          width="400px"
+        >
+          <div style="text-align: center;">
+            <img
+              :src="userInfo.userAvatar || defaultAvatar"
+              style="max-width: 100%; max-height: 400px; object-fit: contain;"
+            />
+          </div>
+        </el-dialog>
+
         <!-- 用户基本信息 -->
-        <el-form 
-          :model="userInfo" 
+        <el-form
+          :model="userInfo"
           label-width="100px"
           class="user-form"
         >
@@ -38,20 +56,20 @@
             <el-input v-model="userInfo.id" disabled />
           </el-form-item>
 
-          <el-form-item label="用户名" 
+          <el-form-item label="用户名"
             :rules="[
               { required: true, message: '用户名不能为空', trigger: 'blur' },
               { min: 2, max: 16, message: '长度在 2 到 16 个字符', trigger: 'blur' }
             ]"
           >
-            <el-input 
-              v-model="userInfo.userName" 
+            <el-input
+              v-model="userInfo.userName"
               placeholder="请输入用户名"
               maxlength="16"
               show-word-limit
             />
           </el-form-item>
-          
+
           <el-form-item label="用户角色">
             <el-tag :type="userInfo.userRole === 'admin' ? 'danger' : 'success'">
               {{ userInfo.userRole === 'admin' ? '管理员' : '普通用户' }}
@@ -119,6 +137,9 @@ import { ElMessage } from 'element-plus'
 import requests from '@/utils/request'
 import defaultAvatar from '@/assets/userAvatar.png'
 
+// 基础URL
+const baseURL = import.meta.env.MODE === 'development' ? 'http://localhost:8024' : 'http://47.119.128.91:8024';
+
 // 用户信息
 const userInfo = ref({
   id: '',
@@ -127,8 +148,28 @@ const userInfo = ref({
   userAvatar: '',
   createTime: '',
   updateTime: '',
-  userProfile: ''  // 改为userProfile
+  userProfile: ''
 })
+
+// 是否正在加载头像
+const isAvatarLoading = ref(true);
+
+// 预加载头像
+const preloadAvatar = (url: string) => {
+  if (!url) {
+    isAvatarLoading.value = false;
+    return;
+  }
+  const img = new Image();
+  img.onload = () => {
+    userInfo.value.userAvatar = url;
+    isAvatarLoading.value = false;
+  };
+  img.onerror = () => {
+    isAvatarLoading.value = false;
+  };
+  img.src = url;
+};
 
 // 使用统计
 const statistics = ref({
@@ -136,6 +177,16 @@ const statistics = ref({
   totalMessages: 0,
   usageDays: 0
 })
+
+// 对话框显示状态
+const dialogVisible = ref(false);
+
+// 点击头像处理函数
+const handleAvatarClick = () => {
+  if (userInfo.value.userAvatar || defaultAvatar) {
+    dialogVisible.value = true;
+  }
+};
 
 // 格式化日期
 const formatDate = (date: string) => {
@@ -149,7 +200,14 @@ const getUserInfo = async () => {
     // 获取用户信息
     const res = await requests.get('/user/get/login')
     if (res.code === 0) {
-      userInfo.value = res.data
+      const userData = res.data;
+      // 预加载头像
+      preloadAvatar(userData.userAvatar);
+      // 更新其他信息
+      userInfo.value = {
+        ...userData,
+        userAvatar: '' // 先置空，等预加载完成后再设置
+      };
     } else {
       ElMessage.error(res.message || '获取用户信息失败')
     }
@@ -169,7 +227,8 @@ const handleUpdate = async () => {
   try {
     const res = await requests.post('/user/update', {
       userName: userName.trim(),
-      userProfile: userInfo.value.userProfile || ''
+      userProfile: userInfo.value.userProfile || '',
+      userAvatar: userInfo.value.userAvatar || null  // 添加头像URL
     })
     if (res.code === 0) {
       ElMessage.success('更新成功')
@@ -203,10 +262,11 @@ const beforeAvatarUpload = (file: File) => {
 // 头像上传成功的回调
 const handleAvatarSuccess = (res: any) => {
   if (res.code === 0) {
-    userInfo.value.userAvatar = res.data
-    ElMessage.success('头像更新成功')
+    // 更新头像预览
+    userInfo.value.userAvatar = res.data.url;
+    ElMessage.success('头像上传成功，请点击保存修改以更新信息');
   } else {
-    ElMessage.error(res.message || '头像更新失败')
+    ElMessage.error(res.message || '头像上传失败');
   }
 }
 
@@ -288,4 +348,4 @@ onMounted(() => {
 .input-with-button .el-input {
   flex: 1;
 }
-</style> 
+</style>
