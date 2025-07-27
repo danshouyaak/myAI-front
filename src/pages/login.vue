@@ -42,7 +42,7 @@ const handleLogin = async () => {
     console.log(res);
     ElMessage.success(res.message);
     setUser(res);
-    router.push('/NewMessage');
+    router.push('/new-message');
   } catch (err) {
     console.log(err);
   } finally {

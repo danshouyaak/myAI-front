@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
 import layout from '@/layout/index.vue';
 import requests from '@/utils/request.ts';
 import { getUserLoginStatus } from '@/api/index.ts';
@@ -7,7 +7,7 @@ const routes = [
   {
     path: '/',
     component: layout,
-    redirect: '/NewMessage',
+    redirect: '/new-message',
     meta: { requiresAuth: true }, // 表示该路由需要认证
     children: [
       {
@@ -17,13 +17,28 @@ const routes = [
       },
       {
         name: 'NewMessage',
-        path: '/NewMessage',
+        path: '/new-message',
         component: () => import('@/pages/NewMessage.vue')
+      },
+      {
+        name: 'ModelSquare',
+        path: '/model-square',
+        component: () => import('@/pages/ModelSquare.vue')
       },
       {
         name: 'settings',
         path: '/settings',
         component: () => import('@/pages/settings.vue')
+      },
+      {
+        path: '/chat-preview',
+        name: 'ChatPreview',
+        component: () => import('../pages/ChatPreview.vue')
+      },
+      {
+        name: 'user-statistics',
+        path: '/user-statistics',
+        component: () => import('@/pages/UserStatistics.vue')
       }
     ]
   },
@@ -47,11 +62,10 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  // 开发环境使用hash模式避免刷新404问题，生产环境使用history模式
+  history: import.meta.env.DEV ? createWebHashHistory() : createWebHistory(),
   routes
 });
-
-
 
 router.beforeEach(async (to, from, next) => {
   // 获取用户登录状态

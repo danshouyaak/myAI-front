@@ -12,6 +12,7 @@ declare module 'vue' {
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElCol: typeof import('element-plus/es')['ElCol'];
+    ElCollapseTransition: typeof import('element-plus/es')['ElCollapseTransition'];
     ElContainer: typeof import('element-plus/es')['ElContainer']
     ElDialog: typeof import('element-plus/es')['ElDialog'];
     ElDropdown: typeof import('element-plus/es')['ElDropdown'];
@@ -27,7 +28,11 @@ declare module 'vue' {
     ElMain: typeof import('element-plus/es')['ElMain']
     ElMenu: typeof import('element-plus/es')['ElMenu']
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
+    ElProgress: typeof import('element-plus/es')['ElProgress'];
     ElRow: typeof import('element-plus/es')['ElRow'];
+    ElScrollbar: typeof import('element-plus/es')['ElScrollbar'];
+    ElTable: typeof import('element-plus/es')['ElTable'];
+    ElTableColumn: typeof import('element-plus/es')['ElTableColumn'];
     ElTag: typeof import('element-plus/es')['ElTag']
     ElText: typeof import('element-plus/es')['ElText']
     ElUpload: typeof import('element-plus/es')['ElUpload'];
@@ -35,9 +40,5 @@ declare module 'vue' {
     Header: typeof import('./src/components/Header.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-  }
-
-  export interface ComponentCustomProperties {
-    vLoading: typeof import('element-plus/es')['ElLoadingDirective'];
   }
 }

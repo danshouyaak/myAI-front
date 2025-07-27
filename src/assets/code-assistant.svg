@@ -1,0 +1,50 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <!-- 背景圆形 -->
+    <circle cx="60" cy="60" r="58" fill="url(#codeBg)" stroke="#e1e8ed" stroke-width="2"/>
+
+    <!-- 渐变定义 -->
+    <defs>
+        <linearGradient id="codeBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1"/>
+        </linearGradient>
+        <linearGradient id="screenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#2d3748;stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:#1a202c;stop-opacity:1"/>
+        </linearGradient>
+    </defs>
+
+    <!-- 显示器外框 -->
+    <rect x="20" y="25" width="80" height="55" rx="4" ry="4"
+          fill="url(#screenGradient)" stroke="#4a5568" stroke-width="2"/>
+
+    <!-- 显示器屏幕 -->
+    <rect x="25" y="30" width="70" height="45" rx="2" ry="2" fill="#000000"/>
+
+    <!-- 代码行 -->
+    <g fill="#00ff88" font-family="monospace" font-size="6">
+        <text x="28" y="38">&lt;html&gt;</text>
+        <text x="30" y="45" fill="#ff6b6b">&lt;head&gt;</text>
+        <text x="32" y="52" fill="#4ecdc4">&lt;title&gt;AI&lt;/title&gt;</text>
+        <text x="30" y="59" fill="#ff6b6b">&lt;/head&gt;</text>
+        <text x="30" y="66" fill="#feca57">&lt;body&gt;</text>
+        <text x="32" y="73" fill="#48dbfb">console.log("Hello");</text>
+    </g>
+
+    <!-- 显示器支架 -->
+    <rect x="55" y="80" width="10" height="15" fill="#4a5568"/>
+    <rect x="45" y="95" width="30" height="4" rx="2" fill="#4a5568"/>
+
+    <!-- 装饰性代码符号 -->
+    <g fill="#ffffff" opacity="0.8">
+        <text x="15" y="20" font-family="monospace" font-size="12" fill="#00ff88">&lt;/&gt;</text>
+        <text x="90" y="110" font-family="monospace" font-size="12" fill="#ff6b6b">{}</text>
+        <circle cx="105" cy="25" r="2" fill="#feca57"/>
+        <circle cx="15" cy="105" r="2" fill="#4ecdc4"/>
+    </g>
+
+    <!-- 闪烁光标 -->
+    <rect x="85" y="70" width="1" height="6" fill="#00ff88">
+        <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+    </rect>
+</svg>

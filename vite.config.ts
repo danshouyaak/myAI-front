@@ -5,6 +5,7 @@ import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import path from 'path'; // 导入path模块
 
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',  // 修改为相对路径
@@ -34,6 +35,9 @@ export default defineConfig({
     },
   },
   server: {
+    // 配置端口和主机
+    port: 5173,
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8024',
@@ -79,6 +83,13 @@ export default defineConfig({
           });
         }
       }
-    }
+    },
+    // 配置开发服务器的中间件，支持SPA路由
+    middlewareMode: false
+  },
+  // 预览服务器配置（用于生产构建预览）
+  preview: {
+    port: 4173,
+    host: true
   }
 });

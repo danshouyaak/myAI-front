@@ -5,7 +5,7 @@
         :icon="isCollapsed ? 'Plus' : ''"
         class="new-chat-button"
         type="primary"
-        @click="()=>{ newConversationId = '';router.push('/newMessage')}"
+        @click="handleNewMessage"
       >
         <template v-if="!isCollapsed">
           <img alt="" class="button-icon" src="@/assets/NewMessage.svg" />
@@ -23,15 +23,37 @@
         <span>历史会话</span>
       </div>
 
-      <Conversations
-        v-model:active="activeConversationId"
-        :height="conversationsHeight"
-        :items="transformedConversations"
-        :label-max-width="200"
-        :show-tooltip="true"
-        row-key="conversationId"
-        @change="handleConversationSelect"
-      />
+      <el-scrollbar height="calc(100vh - 180px)">
+        <div v-for="item in transformedConversations" :key="item.id" class="conversation-item">
+          <div :class="{ 'selected': item.selected }" class="conversation-content">
+            <div class="conversation-main" @click="handleConversationSelect(item)">
+              <span class="conversation-label">{{ item.label }}</span>
+            </div>
+            <div class="conversation-actions">
+              <el-dropdown trigger="click" @command="handleCommand">
+                <el-button class="more-button" text>
+                  <el-icon>
+                    <MoreFilled />
+                  </el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item
+                      command="delete"
+                      @click="handleDeleteConversation(item.id)"
+                    >
+                      <el-icon>
+                        <Delete />
+                      </el-icon>
+                      <span>删除</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+          </div>
+        </div>
+      </el-scrollbar>
     </div>
 
     <div class="user-section">
@@ -61,7 +83,7 @@
 
 <script lang="ts" setup>
 import { watchEffect, ref, computed, onMounted } from 'vue';
-import { ChatDotRound, Plus, Setting } from '@element-plus/icons-vue';
+import { ChatDotRound, Plus, Setting, Delete, MoreFilled } from '@element-plus/icons-vue';
 import { Conversations } from 'vue-element-plus-x';
 import type { ConversationItem } from 'vue-element-plus-x/types/Conversations';
 import requests from '@/utils/request.ts';
@@ -69,11 +91,12 @@ import {
   conversationId,
   isShowMessage,
   newConversationId,
+  newConversationMessage,
   setMessageList
 } from '@/global/MessageCommon.ts';
 import { removeUser } from '@/global/UserStatue.ts';
 import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import dayjs from 'dayjs';
 import defaultAvatar from '@/assets/userAvatar.png';
 
@@ -129,12 +152,16 @@ const transformedConversations = computed<ConversationItem[]>(() => {
       group = 'lastMonth';
     }
 
+    const isSelected = item.conversationId === activeConversationId.value;
+
     return {
       id: item.conversationId,
       label: item.description || '新对话',
       group,
       createTime: item.createTime,
-      tooltip: `创建时间: ${dayjs(item.createTime).format('YYYY-MM-DD HH:mm:ss')}`
+      tooltip: `创建时间: ${dayjs(item.createTime).format('YYYY-MM-DD HH:mm:ss')}`,
+      selected: isSelected,
+      disabled: false
     };
   });
 });
@@ -157,15 +184,103 @@ const getConversationList = async () => {
   }
 };
 
+// 处理新建消息
+const handleNewMessage = () => {
+  console.log('🆕 点击新建消息，清空会话状态');
+
+  // 清空所有会话相关的状态
+  newConversationId.value = '';
+  newConversationMessage.value = '';
+  activeConversationId.value = '';
+
+  // 清空消息列表
+  setMessageList([]);
+  isShowMessage.value = false;
+
+  // 跳转到新建消息页面
+  router.push('/new-message');
+};
+
 // 处理会话选择
 const handleConversationSelect = async (conversation: ConversationItem) => {
+  if (!conversation || !conversation.id) return;
+
+  // 更新选中状态
   activeConversationId.value = conversation.id as string;
+
+  // 路由跳转
   router.push(`/main/${conversation.id}`);
   newConversationId.value = conversation.id as string;
-  const response = await requests.get('/message/getMessage/list', {
-    params: { conversationId: conversation.id }
-  });
-  setMessageList(response.data);
+
+  // 获取消息列表
+  try {
+    const response = await requests.get('/message/getMessage/list', {
+      params: { conversationId: conversation.id }
+    });
+
+    console.log('📨 获取消息列表响应:', response);
+
+    // 由于响应拦截器已经返回了 res.data，所以 response 就是后端的响应体
+    if (response) {
+      if (response.code === 0) {
+        // 成功响应，提取实际数据
+        const messageList = response.data || [];
+        console.log('📋 提取的消息列表:', messageList);
+        console.log('📋 消息列表类型:', typeof messageList, '是否为数组:', Array.isArray(messageList));
+        setMessageList(messageList);
+        ElMessage.success(`成功加载 ${messageList.length} 条消息`);
+      } else {
+        console.error('❌ 后端返回错误:', response.message);
+        ElMessage.error(response.message || '获取消息列表失败');
+        setMessageList([]); // 设置空列表
+      }
+    } else {
+      console.error('❌ 响应格式错误:', response);
+      ElMessage.error('响应格式错误');
+      setMessageList([]); // 设置空列表
+    }
+  } catch (error) {
+    console.error('获取消息列表失败:', error);
+    ElMessage.error('获取消息列表失败');
+    setMessageList([]); // 设置空列表
+  }
+};
+
+// 处理会话删除
+const handleDeleteConversation = async (conversationId: string) => {
+  try {
+    // 显示确认对话框
+    await ElMessageBox.confirm(
+      '确定要删除这个会话吗？',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+
+    const response = await requests.get('/conversation/deleteConversation', {
+      params: { conversationId }
+    });
+
+    if (response.code === 0) {
+      ElMessage.success('删除成功');
+      // 重新获取会话列表
+      await getConversationList();
+      // 如果删除的是当前选中的会话，则跳转到新建消息页面
+      if (activeConversationId.value === conversationId) {
+        router.push('/new-message');
+      }
+    } else {
+      ElMessage.error(response.message || '删除失败');
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除会话失败:', error);
+      ElMessage.error('删除会话失败');
+    }
+  }
 };
 
 // 处理下拉菜单命令
@@ -305,6 +420,73 @@ onMounted(() => {
 :root {
   --aside-width: 260px;
   --aside-collapsed-width: 64px;
+}
+
+.conversation-item {
+  margin: 4px 8px;
+}
+
+.conversation-content {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+  transition: all 0.3s;
+  background-color: var(--el-bg-color);
+}
+
+.conversation-content:hover {
+  background-color: var(--el-fill-color-light);
+}
+
+.conversation-content.selected {
+  background-color: var(--el-color-primary-light-9);
+}
+
+.conversation-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 12px;
+}
+
+.conversation-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-time {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-left: 8px;
+}
+
+.conversation-actions {
+  display: flex;
+  align-items: center;
+}
+
+.more-button {
+  padding: 2px;
+}
+
+.more-button :deep(.el-icon) {
+  font-size: 16px;
+}
+
+:deep(.el-dropdown-menu__item) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--el-color-danger);
+}
+
+:deep(.el-dropdown-menu__item .el-icon) {
+  margin-right: 0;
 }
 </style>
 

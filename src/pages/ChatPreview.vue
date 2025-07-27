@@ -1,29 +1,26 @@
 <template>
-  <div class="chat-container">
-    <!-- 聊天头部 -->
+  <div class="chat-preview-container">
+    <!-- 头部信息 -->
     <div class="chat-header">
       <div class="model-info">
         <div class="model-avatar">
-          <img :alt="currentModel.name" :src="getAssetsFile(currentModel.icon)" />
+          <img :alt="modelInfo.name" :src="getAssetsFile(modelInfo.icon)" />
         </div>
         <div class="model-details">
-          <h2 class="model-name">{{ currentModel.name }}</h2>
-          <p class="model-desc">{{ currentModel.description }}</p>
+          <h2 class="model-name">和{{ modelInfo.name }}的对话</h2>
+          <p class="model-desc">{{ modelInfo.description }}</p>
         </div>
       </div>
     </div>
 
     <!-- 聊天内容区域 -->
-    <div class="chat-content">
-      <div class="messages-container">
-        <!-- 这里是消息列表，暂时使用模拟数据 -->
-        <div v-for="message in messages" :key="message.id" :class="message.role" class="message">
-          <div class="message-avatar">
-            <img :alt="message.role" :src="getAssetsFile(message.avatar)" />
-          </div>
-          <div class="message-content">
-            <p>{{ message.content }}</p>
-          </div>
+    <div ref="chatContent" class="chat-content">
+      <div class="message assistant">
+        <div class="message-avatar">
+          <img :alt="modelInfo.name" :src="getAssetsFile(modelInfo.icon)" />
+        </div>
+        <div class="message-content">
+          <p>{{ welcomeMessage }}</p>
         </div>
       </div>
     </div>
@@ -67,75 +64,64 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { Position } from '@element-plus/icons-vue';
 import { getAssetsFile } from '@/utils/pub-use';
+import request from '@/utils/request';
+import { ElMessage } from 'element-plus';
 
-// 当前模型信息
-const currentModel = ref({
-  id: 3,
-  name: '学术搜索',
-  icon: 'Mathematician.png',
-  description: '专业解答学术问题，提供研究方向建议'
+const route = useRoute();
+const router = useRouter();
+
+// 从路由参数获取模型信息
+const modelInfo = ref({
+  id: route.query.modelId,
+  name: route.query.modelName,
+  icon: route.query.modelIcon,
+  description: route.query.modelDesc,
+  source: route.query.modelSource
 });
 
-// 聊天消息
-const messages = ref([
-  {
-    id: 1,
-    role: 'assistant',
-    content: '你好！我是学术搜索助手，有什么学术问题我可以帮你解答吗？',
-    avatar: 'Mathematician.png'
-  },
-  {
-    id: 2,
-    role: 'user',
-    content: '请问你能帮我查找一下关于CGSS数据的最新研究吗？',
-    avatar: 'userAvatar.png'
-  },
-  {
-    id: 3,
-    role: 'assistant',
-    content: '好的，我可以帮你查找2025年发表的使用CGSS数据的论文。你想了解哪个具体领域的研究呢？',
-    avatar: 'Mathematician.png'
+// 根据模型类型设置欢迎语
+const welcomeMessage = ref('');
+onMounted(() => {
+  switch (modelInfo.value.name) {
+    case '医疗搜索':
+      welcomeMessage.value = '你好！我是医疗搜索助手，我可以帮你搜索医疗文献、指南、教科书等，为医学类问题提供专业解答。';
+      break;
+    case '学术搜索':
+      welcomeMessage.value = '你好！我是学术搜索助手，有什么学术问题我可以帮你解答吗？';
+      break;
+    default:
+      welcomeMessage.value = `你好！我是${modelInfo.value.name}，很高兴为你服务。`;
   }
-]);
+});
 
 // 提示词列表
 const prompts = ref([
   {
     id: 1,
-    title: '2025年发表的使用CGSS数据的论文',
+    title: '帮我找一下高温热疗用来治疗癌症的文献',
     type: 'info',
     effect: 'light'
   },
   {
     id: 2,
-    title: '为什么实体癌是抗原受体-T细胞（CAR-T）疗法治疗的难点',
+    title: '70岁的邻居突然晕倒在地上，这种情况下我该怎么做？',
     type: 'warning',
     effect: 'light'
   },
   {
     id: 3,
-    title: 'LLM+search，在HCI领域有什么最新的研究',
+    title: '二甲双胍最常见的副作用是什么？',
     type: 'success',
-    effect: 'light'
-  },
-  {
-    id: 4,
-    title: '请解释一下量子计算的基本原理',
-    type: 'info',
-    effect: 'light'
-  },
-  {
-    id: 5,
-    title: '帮我找一下机器学习在医疗影像中的应用',
-    type: 'warning',
     effect: 'light'
   }
 ]);
 
 const inputMessage = ref('');
+const chatContent = ref<HTMLElement | null>(null);
 
 // 处理提示词点击
 const handlePromptClick = (prompt: any) => {
@@ -143,34 +129,27 @@ const handlePromptClick = (prompt: any) => {
 };
 
 // 处理发送消息
-const handleSend = () => {
+const handleSend = async () => {
   if (!inputMessage.value.trim()) return;
 
-  // 添加用户消息
-  messages.value.push({
-    id: messages.value.length + 1,
-    role: 'user',
-    content: inputMessage.value,
-    avatar: 'userAvatar.png'
-  });
-
-  // 模拟AI回复
-  setTimeout(() => {
-    messages.value.push({
-      id: messages.value.length + 1,
-      role: 'assistant',
-      content: '我正在分析这个问题，请稍等...',
-      avatar: 'Mathematician.png'
+  try {
+    // 创建新会话
+    const result = await request.post('/conversation/addConversation', {
+      aiId: modelInfo.value.id,
+      firstMessage: inputMessage.value
     });
-  }, 1000);
 
-  // 清空输入
-  inputMessage.value = '';
+    // 跳转到主聊天页面
+    router.push(`/main/${result.data}`);
+  } catch (error) {
+    ElMessage.error('创建会话失败，请稍后重试');
+    console.error('创建会话失败:', error);
+  }
 };
 </script>
 
 <style scoped>
-.chat-container {
+.chat-preview-container {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -225,19 +204,17 @@ const handleSend = () => {
   padding: 24px;
 }
 
-.messages-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
 .message {
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.message.user {
-  flex-direction: row-reverse;
+.message.assistant {
+  margin-right: auto;
 }
 
 .message-avatar {
@@ -261,11 +238,6 @@ const handleSend = () => {
   max-width: 70%;
 }
 
-.message.user .message-content {
-  background: var(--el-color-primary);
-  color: #fff;
-}
-
 .message-content p {
   margin: 0;
   line-height: 1.5;
@@ -287,6 +259,7 @@ const handleSend = () => {
   display: flex;
   gap: 8px;
   padding: 4px;
+  flex-wrap: wrap;
 }
 
 .prompt-tag {
@@ -351,6 +324,11 @@ const handleSend = () => {
 
   .input-section .el-button {
     padding: 8px 16px;
+  }
+
+  .prompt-tag {
+    font-size: 12px;
+    padding: 4px 8px;
   }
 }
 </style>

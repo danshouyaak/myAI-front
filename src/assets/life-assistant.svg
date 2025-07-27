@@ -1,0 +1,112 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <!-- 背景圆形 -->
+    <circle cx="60" cy="60" r="58" fill="url(#lifeBg)" stroke="#e1e8ed" stroke-width="2"/>
+
+    <!-- 渐变定义 -->
+    <defs>
+        <linearGradient id="lifeBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1"/>
+        </linearGradient>
+        <linearGradient id="houseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#ff9a9e;stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:#fecfef;stop-opacity:1"/>
+        </linearGradient>
+        <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:#ee5a52;stop-opacity:1"/>
+        </linearGradient>
+    </defs>
+
+    <!-- 房子主体 -->
+    <rect x="35" y="45" width="50" height="40" rx="3" ry="3"
+          fill="url(#houseGradient)" stroke="#e9ecef" stroke-width="1"/>
+
+    <!-- 屋顶 -->
+    <polygon points="30,45 60,25 90,45" fill="#8b4513" stroke="#654321" stroke-width="1"/>
+
+    <!-- 烟囱 -->
+    <rect x="70" y="30" width="6" height="15" fill="#654321"/>
+
+    <!-- 烟雾 -->
+    <g fill="#e9ecef" opacity="0.7">
+        <circle cx="73" cy="25" r="2"/>
+        <circle cx="75" cy="22" r="1.5"/>
+        <circle cx="77" cy="20" r="1"/>
+    </g>
+
+    <!-- 门 -->
+    <rect x="55" y="65" width="10" height="20" rx="1" fill="#8b4513"/>
+    <circle cx="63" cy="75" r="1" fill="#ffd700"/>
+
+    <!-- 窗户 -->
+    <rect x="42" y="55" width="8" height="8" rx="1" fill="#87ceeb" stroke="#4682b4" stroke-width="1"/>
+    <line x1="46" y1="55" x2="46" y2="63" stroke="#4682b4" stroke-width="1"/>
+    <line x1="42" y1="59" x2="50" y2="59" stroke="#4682b4" stroke-width="1"/>
+
+    <rect x="70" y="55" width="8" height="8" rx="1" fill="#87ceeb" stroke="#4682b4" stroke-width="1"/>
+    <line x1="74" y1="55" x2="74" y2="63" stroke="#4682b4" stroke-width="1"/>
+    <line x1="70" y1="59" x2="78" y2="59" stroke="#4682b4" stroke-width="1"/>
+
+    <!-- 花园 -->
+    <g transform="translate(20, 85)">
+        <!-- 花朵 -->
+        <circle cx="5" cy="0" r="3" fill="#ff69b4"/>
+        <circle cx="2" cy="-2" r="2" fill="#ff1493"/>
+        <circle cx="8" cy="-1" r="2" fill="#ff1493"/>
+        <circle cx="5" cy="-3" r="2" fill="#ff1493"/>
+        <circle cx="5" cy="3" r="2" fill="#ff1493"/>
+        <circle cx="5" cy="0" r="1" fill="#ffd700"/>
+
+        <!-- 茎 -->
+        <line x1="5" y1="3" x2="5" y2="10" stroke="#32cd32" stroke-width="2"/>
+
+        <!-- 叶子 -->
+        <ellipse cx="3" cy="6" rx="2" ry="1" fill="#32cd32" transform="rotate(-30 3 6)"/>
+        <ellipse cx="7" cy="8" rx="2" ry="1" fill="#32cd32" transform="rotate(30 7 8)"/>
+    </g>
+
+    <!-- 太阳 -->
+    <g transform="translate(90, 25)">
+        <circle cx="0" cy="0" r="8" fill="#ffd700"/>
+        <!-- 阳光 -->
+        <g stroke="#ffd700" stroke-width="2">
+            <line x1="0" y1="-12" x2="0" y2="-15"/>
+            <line x1="8.5" y1="-8.5" x2="10.6" y2="-10.6"/>
+            <line x1="12" y1="0" x2="15" y2="0"/>
+            <line x1="8.5" y1="8.5" x2="10.6" y2="10.6"/>
+            <line x1="0" y1="12" x2="0" y2="15"/>
+            <line x1="-8.5" y1="8.5" x2="-10.6" y2="10.6"/>
+            <line x1="-12" y1="0" x2="-15" y2="0"/>
+            <line x1="-8.5" y1="-8.5" x2="-10.6" y2="-10.6"/>
+        </g>
+    </g>
+
+    <!-- 爱心装饰 -->
+    <g transform="translate(25, 35)">
+        <path d="M0,5 C0,2 2,0 5,0 C8,0 10,2 10,5 C10,8 5,13 5,13 C5,13 0,8 0,5 Z"
+              fill="url(#heartGradient)" opacity="0.8"/>
+    </g>
+
+    <!-- 生活用品图标 -->
+    <g fill="#ffffff" opacity="0.7">
+        <!-- 咖啡杯 -->
+        <g transform="translate(95, 70)">
+            <rect x="0" y="0" width="8" height="10" rx="1" fill="#8b4513"/>
+            <rect x="1" y="1" width="6" height="6" fill="#654321"/>
+            <path d="M8,3 Q10,3 10,5 Q10,7 8,7" stroke="#8b4513" stroke-width="1" fill="none"/>
+            <!-- 蒸汽 -->
+            <g stroke="#e9ecef" stroke-width="1" opacity="0.5">
+                <path d="M2,-2 Q3,-4 2,-6"/>
+                <path d="M4,-2 Q5,-4 4,-6"/>
+                <path d="M6,-2 Q7,-4 6,-6"/>
+            </g>
+        </g>
+
+        <!-- 购物袋 -->
+        <g transform="translate(15, 65)">
+            <rect x="0" y="3" width="10" height="12" rx="1" fill="#4ecdc4"/>
+            <path d="M2,3 Q2,0 5,0 Q8,0 8,3" stroke="#4ecdc4" stroke-width="2" fill="none"/>
+        </g>
+    </g>
+</svg>

@@ -7,11 +7,12 @@
         class="welcome-empty"
       >
         <template #description>
-          <h2 class="welcome-title">欢迎使用AI小助手</h2>
-          <p class="welcome-subtitle">请输入你的问题，帮你深度解答</p>
+          <h2 class="welcome-title">欢迎使用MyAI</h2>
+          <p class="welcome-subtitle">输入你的问题，开始智能对话</p>
         </template>
       </el-empty>
     </div>
+
 
     <div class="input-section">
       <div class="input-wrapper">
@@ -20,26 +21,28 @@
           :autosize="{ minRows: 1, maxRows: 3 }"
           class="message-input"
           clearable
-          placeholder="输入你的问题..."
+          placeholder="输入你的问题，按 Ctrl+Enter 发送..."
           type="textarea"
+          @keydown="handleKeydown"
         />
         <div class="button-group">
-          <el-tag class="model-tag" size="small">
-            <el-icon>
+          <div class="ai-info">
+            <el-icon class="ai-icon">
               <ChatRound />
             </el-icon>
-            长思考 (k1.5)
-          </el-tag>
+            <span class="ai-name">MyAI 智能助手</span>
+          </div>
           <el-button
             :disabled="!input.trim()"
             class="send-button"
             type="primary"
             @click="handleNewMessages()"
+            :loading="isCreating"
           >
             <el-icon>
               <Position />
             </el-icon>
-            发送
+            {{ isCreating ? '创建中...' : '发送' }}
           </el-button>
         </div>
       </div>
@@ -48,31 +51,45 @@
 </template>
 
 <script lang="ts" setup>
-import { getAssetsFile } from '@/utils/pub-use.ts';
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getAIModel } from '@/global/aiCommon.ts';
+import { ElMessage } from 'element-plus';
 import request from '@/utils/request.ts';
+import { getAssetsFile } from '@/utils/pub-use.ts';
 import {
-  conversationId,
   newConversationId,
   newConversationMessage,
-  setConversationId, setMessageList
 } from '@/global/MessageCommon.ts';
+import { getUser } from '@/global/UserStatue';
 import { Position, ChatRound } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const input = ref('');
 const isMobile = ref(false);
+const isCreating = ref(false);
+
+// 默认AI模型ID（可以设置为您的默认AI助手）
+const DEFAULT_AI_ID = 1;
 
 // 检查是否为移动设备
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768;
 };
 
+// 立即检查一次移动端状态
+checkMobile();
+
+// 处理键盘事件
+const handleKeydown = (event: KeyboardEvent) => {
+  // Ctrl+Enter 或 Cmd+Enter 发送消息
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault();
+    handleNewMessages();
+  }
+};
+
 // 监听窗口大小变化
 onMounted(() => {
-  checkMobile();
   window.addEventListener('resize', checkMobile);
 });
 
@@ -81,28 +98,65 @@ onUnmounted(() => {
 });
 
 const handleNewMessages = async () => {
-  if (!input.value.trim()) return;
+  if (!input.value.trim()) {
+    ElMessage.warning('请输入您的问题');
+    return;
+  }
+
+  // 检查用户是否已登录
+  const user = getUser();
+  if (!user) {
+    ElMessage.error('请先登录');
+    router.push('/login');
+    return;
+  }
+
+  isCreating.value = true;
 
   try {
-    const model: any = getAIModel();
+    console.log('🚀 创建新会话...');
+
+    // 创建新会话，使用默认AI模型
     const result = await request.post('/conversation/addConversation', {
-      aiId: model.id
+      aiId: DEFAULT_AI_ID
     });
 
-    newConversationId.value = result.data;
-    newConversationMessage.value = input.value;
-    router.push(`/main/${newConversationId.value}`);
+    if (result.code === 0) {
+      console.log('✅ 会话创建成功，ID:', result.data);
+
+      // 设置新会话信息
+      const conversationId = result.data;
+      const messageContent = input.value;
+
+      // 确保清空旧的状态，设置新的会话信息
+      newConversationId.value = conversationId;
+      newConversationMessage.value = messageContent;
+
+      console.log('📝 设置新会话信息:', {
+        conversationId,
+        messageContent,
+        newConversationId: newConversationId.value,
+        newConversationMessage: newConversationMessage.value
+      });
+
+      // 清空输入框
+      input.value = '';
+
+      // 跳转到聊天页面
+      console.log('🔄 跳转到聊天页面:', `/main/${conversationId}`);
+      await router.push(`/main/${conversationId}`);
+
+      ElMessage.success('会话创建成功');
+    } else {
+      throw new Error(result.message || '创建会话失败');
+    }
   } catch (error) {
-    console.error('创建会话失败:', error);
+    console.error('❌ 创建会话失败:', error);
+    ElMessage.error('创建会话失败，请重试');
+  } finally {
+    isCreating.value = false;
   }
 };
-// const getMessageByConversationId = async (conversationId: string) => {
-//   newConversationId.value = conversationId;
-//   console.log('getMessageByConversationId', conversationId);
-//   const response = await request.get('/message/getMessage/list', { params: { conversationId } });
-//   setMessageList(response.data);
-// };
-
 </script>
 
 <style scoped>
@@ -143,22 +197,40 @@ const handleNewMessages = async () => {
   margin: 0;
 }
 
+/* AI信息显示样式 */
+.ai-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.ai-icon {
+  color: #409eff;
+  font-size: 16px;
+}
+
+.ai-name {
+  font-weight: 500;
+}
+
 /* 输入区域容器样式 */
 .input-section {
-  width: 100%; /* 确保容器占满父元素宽度 */
-  padding: 20px; /* 设置内边距，给内容留出空间 */
-  background-color: #fff; /* 白色背景 */
-  border-top: 1px solid #f0f0f0; /* 顶部边框分隔线 */
-  position: sticky; /* 粘性定位，滚动时保持在底部 */
+  width: 100%;
+  padding: 20px;
+  background-color: #fff;
+  border-top: 1px solid #f0f0f0;
+  position: sticky;
   bottom: 0;
 }
 
 /* 输入框包装器样式 */
 .input-wrapper {
-  width: 100%; /* 确保包装器占满容器宽度 */
-  max-width: 800px; /* 限制最大宽度，保持良好的阅读体验 */
-  margin: 0 auto; /* 水平居中 */
-  box-sizing: border-box; /* 确保padding和border计入宽度计算 */
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .message-input {
@@ -187,19 +259,7 @@ const handleNewMessages = async () => {
   align-items: center;
 }
 
-.model-tag {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  background-color: #f5f7fa;
-  border: none;
-  color: #666;
-}
 
-.model-tag :deep(.el-icon) {
-  margin-right: 4px;
-}
 
 .send-button {
   padding: 8px 24px;
@@ -214,58 +274,64 @@ const handleNewMessages = async () => {
   font-size: 16px;
 }
 
-/* 响应式设计 - 移动端样式（屏幕宽度 ≤ 768px） */
+/* 响应式设计 - 移动端样式 */
 @media (max-width: 768px) {
   .welcome-section {
-    padding: 16px; /* 减小欢迎区域的内边距 */
+    padding: 15px;
+  }
+
+  .welcome-empty {
+    padding: 15px 0;
   }
 
   .welcome-title {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .welcome-subtitle {
+    font-size: 13px;
+  }
+
+  .ai-info {
+    font-size: 13px;
+  }
+
+  .ai-icon {
     font-size: 14px;
   }
 
   .input-section {
-    padding: 12px; /* 减小输入区域的内边距 */
-    position: fixed; /* 固定定位，确保始终在底部 */
+    padding: 12px;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    width: 100%; /* 确保占满屏幕宽度 */
-    box-sizing: border-box; /* 将padding计入宽度计算 */
+    width: 100%;
+    box-sizing: border-box;
     background-color: #fff;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); /* 添加顶部阴影，提升层次感 */
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   }
 
-  /* 移动端输入框包装器样式调整 */
   .input-wrapper {
-    padding: 0; /* 移除内边距 */
-    max-width: 100%; /* 允许占满父容器宽度 */
+    padding: 0;
+    max-width: 100%;
   }
 
-  /* 移动端消息输入框样式 */
   .message-input {
-    margin-bottom: 8px; /* 减小底部间距 */
-    width: 100%; /* 确保输入框占满容器宽度 */
+    margin-bottom: 8px;
+    width: 100%;
   }
 
-  /* 移动端文本域样式调整 */
   .message-input :deep(.el-textarea__inner) {
-    width: 100%; /* 确保文本域占满容器宽度 */
-    min-height: 45px !important; /* 设置最小高度 */
-    padding: 12px; /* 设置内边距 */
-    font-size: 14px; /* 调整字体大小 */
-    border-radius: 8px; /* 圆角边框 */
-    box-sizing: border-box; /* 确保padding计入宽度计算 */
+    width: 100%;
+    min-height: 45px !important;
+    padding: 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    box-sizing: border-box;
   }
 
-  .model-tag {
-    padding: 4px 8px;
-    font-size: 12px;
-  }
+
 
   .send-button {
     padding: 6px 16px;
@@ -278,21 +344,20 @@ const handleNewMessages = async () => {
   }
 }
 
-/* 适配超小屏幕设备（屏幕宽度 ≤ 320px） */
+/* 适配超小屏幕设备 */
 @media (max-width: 320px) {
   .welcome-section {
     padding: 12px;
   }
 
+
   .input-section {
-    padding: 8px; /* 进一步减小内边距 */
-    width: 100%; /* 确保占满屏幕宽度 */
-    box-sizing: border-box; /* 将padding计入宽度计算 */
+    padding: 8px;
   }
 
   .input-wrapper {
-    padding: 0; /* 移除内边距 */
-    width: 100%; /* 确保占满容器宽度 */
+    padding: 0;
+    width: 100%;
   }
 
   .welcome-title {
@@ -309,10 +374,6 @@ const handleNewMessages = async () => {
     min-height: 40px !important;
   }
 
-  .model-tag {
-    padding: 3px 6px;
-    font-size: 11px;
-  }
 
   .send-button {
     padding: 4px 12px;

@@ -4,6 +4,13 @@
       <template #header>
         <div class="card-header">
           <h2>个人信息</h2>
+          <el-button
+            :icon="DataAnalysis"
+            type="primary"
+            @click="goToStatistics"
+          >
+            使用统计
+          </el-button>
         </div>
       </template>
 
@@ -134,11 +141,16 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { DataAnalysis } from '@element-plus/icons-vue';
+import { useRouter } from 'vue-router';
 import requests from '@/utils/request'
 import defaultAvatar from '@/assets/userAvatar.png'
 
 // 基础URL
 const baseURL = import.meta.env.MODE === 'development' ? 'http://localhost:8024' : 'http://47.119.128.91:8024';
+
+// 路由
+const router = useRouter();
 
 // 用户信息
 const userInfo = ref({
@@ -269,6 +281,11 @@ const handleAvatarSuccess = (res: any) => {
     ElMessage.error(res.message || '头像上传失败');
   }
 }
+
+// 跳转到统计页面
+const goToStatistics = () => {
+  router.push('/user-statistics');
+};
 
 onMounted(() => {
   getUserInfo()
